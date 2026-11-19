@@ -28,6 +28,72 @@ import org.json.JSONObject;
 public class V2rayVPNService extends VpnService implements V2rayServicesListener {
     private static final int VPN_MTU = 1500;
 
+        private static final long SESSION_LIMIT_MS =
+            2L * 60L * 60L * 1000L;
+
+    private static final long DEADLINE_CHECK_INTERVAL_MS = 1000L;
+
+    private final Handler sessionHandler =
+            new Handler(Looper.getMainLooper());
+
+    private volatile long sessionDeadlineElapsedMs = 0L;
+
+    private final Runnable sessionDeadlineCheck = new Runnable() {
+        @Override
+        public void run() {
+            long deadline = sessionDeadlineElapsedMs;
+
+            if (deadline == 0L) {
+                return;
+            }
+
+            long remaining =
+                    deadline - SystemClock.elapsedRealtime();
+
+            if (remaining <= 0L) {
+                // Do not reconnect automatically after expiry.
+                cancelSessionDeadline();
+
+                Log.i(
+                        "V2rayVPNService",
+                        "Two-hour VPN session expired"
+                );
+
+                try {
+                    V2rayCoreManager.getInstance().stopCore();
+                } finally {
+                    // Close the TUN interface even if the core's
+                    // normal shutdown path did not close it.
+                    stopAllProcess();
+                }
+
+                return;
+            }
+
+            sessionHandler.postDelayed(
+                    this,
+                    Math.min(
+                            remaining,
+                            DEADLINE_CHECK_INTERVAL_MS
+                    )
+            );
+        }
+    };
+
+    private void startSessionDeadline() {
+        cancelSessionDeadline();
+
+        sessionDeadlineElapsedMs =
+                SystemClock.elapsedRealtime() + SESSION_LIMIT_MS;
+
+        sessionHandler.post(sessionDeadlineCheck);
+    }
+
+    private void cancelSessionDeadline() {
+        sessionDeadlineElapsedMs = 0L;
+        sessionHandler.removeCallbacks(sessionDeadlineCheck);
+    }
+
     private ParcelFileDescriptor mInterface;
     private V2rayConfig v2rayConfig;
     private boolean isRunning = false;
@@ -86,6 +152,18 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
                     this.onDestroy();
                     return START_NOT_STICKY;
                 }
+
+                     if (!V2rayCoreManager.getInstance().isV2rayCoreRunning()) {
+                    Log.e(
+                            "V2rayVPNService",
+                            "Core is not running after startup"
+                    );
+
+                    stopAllProcess();
+                    return START_NOT_STICKY;
+                }
+
+                startSessionDeadline();           
                 Log.i("V2rayVPNService", "onStartCommand success => native TUN core started.");
             } catch (Exception e) {
                 Log.e("V2rayVPNService", "Failed to start native TUN core", e);
@@ -248,6 +326,7 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
     }
 
     private void stopAllProcess() {
+                cancelSessionDeadline();
         stopForeground(true);
         isRunning = false;
         vpnInterfaceReady = false;
@@ -267,6 +346,7 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
 
     @Override
     public void onDestroy() {
+                cancelSessionDeadline();
         Log.i("V2rayVPNService", "onDestroy called - cleaning up resources");
         isRunning = false;
         vpnInterfaceReady = false;
@@ -299,6 +379,8 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
 
     @Override
     public void onRevoke() {
+        
+cancelSessionDeadline();
         try {
             V2rayCoreManager.getInstance().stopCore();
         } catch (Exception e) {
