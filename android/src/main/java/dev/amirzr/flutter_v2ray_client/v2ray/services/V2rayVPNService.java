@@ -234,6 +234,20 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         } catch (Exception e) {
             Log.w("V2rayVPNService", "Failed to exclude self from VPN", e);
         }
+        if (v2rayConfig.ALLOWED_APPS != null && !v2rayConfig.ALLOWED_APPS.isEmpty()) {
+            // Android allowlist mode: only explicitly selected packages use this VPN.
+            for (String app : v2rayConfig.ALLOWED_APPS) {
+                if (app == null || app.trim().isEmpty() || app.equals(getPackageName())) {
+                    continue;
+                }
+                try {
+                    builder.addAllowedApplication(app);
+                } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+                    Log.w("V2rayVPNService", "Skipping unavailable allowed app: " + app, e);
+                }
+            }
+        }
+
         if (v2rayConfig.BLOCKED_APPS != null) {
             for (String app : v2rayConfig.BLOCKED_APPS) {
                 try {
