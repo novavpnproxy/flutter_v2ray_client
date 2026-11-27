@@ -55,7 +55,8 @@ abstract class FlutterV2rayPlatform extends PlatformInterface {
   /// [remark] is a string identifier for the connection.
   /// [config] is the V2Ray configuration in JSON format.
   /// [notificationDisconnectButtonName] is the text for the disconnect button in notifications.
-  /// [blockedApps] is an optional list of apps to block.
+  /// [blockedApps] is an optional list of apps to exclude from the VPN.
+  /// [allowedApps] is an optional allowlist; when non-empty, only these apps use the VPN.
   /// [bypassSubnets] is an optional list of subnets to bypass.
   /// [proxyOnly] is a boolean indicating whether to use proxy-only mode (default is false).
   /// Returns a [Future] that completes when the connection starts.
@@ -64,10 +65,16 @@ abstract class FlutterV2rayPlatform extends PlatformInterface {
     required String config,
     required String notificationDisconnectButtonName,
     List<String>? blockedApps,
+    List<String>? allowedApps,
     List<String>? bypassSubnets,
     bool proxyOnly = false,
   }) {
     throw UnimplementedError('startV2Ray() has not been implemented.');
+  }
+
+  /// Returns launchable apps available for per-app VPN routing.
+  Future<List<Map<String, String>>> getInstalledApps() {
+    throw UnimplementedError('getInstalledApps() has not been implemented.');
   }
 
   /// Stops the V2Ray connection.
