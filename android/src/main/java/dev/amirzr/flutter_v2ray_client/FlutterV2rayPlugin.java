@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.VpnService;
 import android.os.Build;
 import android.util.Log;
@@ -21,7 +22,12 @@ import dev.amirzr.flutter_v2ray_client.v2ray.V2rayReceiver;
 import dev.amirzr.flutter_v2ray_client.v2ray.utils.AppConfigs;
 import dev.amirzr.flutter_v2ray_client.v2ray.utils.LogcatManager;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -112,7 +118,7 @@ public class FlutterV2rayPlugin implements FlutterPlugin, ActivityAware, PluginR
                         V2rayController.changeConnectionMode(AppConfigs.V2RAY_CONNECTION_MODES.VPN_TUN);
                     }
                     V2rayController.StartV2ray(binding.getApplicationContext(), call.argument("remark"),
-                            call.argument("config"), call.argument("blocked_apps"), call.argument("bypass_subnets"));
+                            call.argument("config"), call.argument("blocked_apps"), call.argument("bypass_subnets"), call.argument("allowed_apps"));
                     result.success(null);
                     break;
                 case "stopV2Ray":
@@ -127,6 +133,32 @@ public class FlutterV2rayPlugin implements FlutterPlugin, ActivityAware, PluginR
                                     iconResourceType, binding.getApplicationContext().getPackageName()),
                             "Flutter V2ray");
                     result.success(null);
+                    break;
+                case "getInstalledApps":
+                    try {
+                        PackageManager packageManager = binding.getApplicationContext().getPackageManager();
+                        Intent launcherIntent = new Intent(Intent.ACTION_MAIN, null);
+                        launcherIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                        List<ResolveInfo> activities = packageManager.queryIntentActivities(launcherIntent, 0);
+                        ArrayList<Map<String, String>> installedApps = new ArrayList<>();
+                        Set<String> seenPackages = new HashSet<>();
+                        String ownPackage = binding.getApplicationContext().getPackageName();
+                        for (ResolveInfo activityInfo : activities) {
+                            if (activityInfo.activityInfo == null) continue;
+                            String packageName = activityInfo.activityInfo.packageName;
+                            if (packageName == null || packageName.equals(ownPackage) || !seenPackages.add(packageName)) continue;
+                            Map<String, String> app = new HashMap<>();
+                            app.put("packageName", packageName);
+                            app.put("appName", String.valueOf(activityInfo.loadLabel(packageManager)));
+                            installedApps.add(app);
+                        }
+                        installedApps.sort((left, right) ->
+                                left.get("appName").compareToIgnoreCase(right.get("appName")));
+                        result.success(installedApps);
+                    } catch (Exception e) {
+                        Log.e("FlutterV2rayPlugin", "Failed to enumerate launchable apps", e);
+                        result.error("APP_LIST_ERROR", "Could not load installed apps", null);
+                    }
                     break;
                 case "getServerDelay":
                     executor.submit(() -> {
