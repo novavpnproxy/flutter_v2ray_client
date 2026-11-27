@@ -66,6 +66,7 @@ class V2ray {
     required String config,
     List<String>? blockedApps,
     List<String>? bypassSubnets,
+    List<String>? allowedApps,
     bool proxyOnly = false,
     String notificationDisconnectButtonName = 'DISCONNECT',
   }) async {
@@ -83,8 +84,14 @@ class V2ray {
       blockedApps: blockedApps,
       proxyOnly: proxyOnly,
       bypassSubnets: bypassSubnets,
+      allowedApps: allowedApps,
       notificationDisconnectButtonName: notificationDisconnectButtonName,
     );
+  }
+
+  /// Lists launchable Android apps for per-app VPN selection.
+  Future<List<Map<String, String>>> getInstalledApps() async {
+    return FlutterV2rayPlatform.instance.getInstalledApps();
   }
 
   /// Stops the V2Ray service.
