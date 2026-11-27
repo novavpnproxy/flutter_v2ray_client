@@ -65,9 +65,15 @@ abstract class FlutterV2rayPlatform extends PlatformInterface {
     required String notificationDisconnectButtonName,
     List<String>? blockedApps,
     List<String>? bypassSubnets,
+    List<String>? allowedApps,
     bool proxyOnly = false,
   }) {
     throw UnimplementedError('startV2Ray() has not been implemented.');
+  }
+
+  /// Returns launchable Android apps with packageName and appName fields.
+  Future<List<Map<String, String>>> getInstalledApps() {
+    throw UnimplementedError('getInstalledApps() has not been implemented.');
   }
 
   /// Stops the V2Ray connection.
