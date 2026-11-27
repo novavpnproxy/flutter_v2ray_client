@@ -228,17 +228,31 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
             }
         }
 
-        // Keep this process outside the VPN so outbound sockets don't loop.
-        try {
-            builder.addDisallowedApplication(getPackageName());
-        } catch (Exception e) {
-            Log.w("V2rayVPNService", "Failed to exclude self from VPN", e);
-        }
-        if (v2rayConfig.BLOCKED_APPS != null) {
-            for (String app : v2rayConfig.BLOCKED_APPS) {
+        // Android does not allow mixing allow-list and deny-list rules.
+        // When ALLOWED_APPS is non-empty, only those selected packages use VPN.
+        if (v2rayConfig.ALLOWED_APPS != null && !v2rayConfig.ALLOWED_APPS.isEmpty()) {
+            for (String app : v2rayConfig.ALLOWED_APPS) {
                 try {
-                    builder.addDisallowedApplication(app);
-                } catch (Exception ignored) {
+                    if (app != null && !app.trim().isEmpty() && !app.equals(getPackageName())) {
+                        builder.addAllowedApplication(app);
+                    }
+                } catch (Exception e) {
+                    Log.w("V2rayVPNService", "Failed to allow application: " + app, e);
+                }
+            }
+        } else {
+            // Keep this process outside the VPN so outbound sockets don't loop.
+            try {
+                builder.addDisallowedApplication(getPackageName());
+            } catch (Exception e) {
+                Log.w("V2rayVPNService", "Failed to exclude self from VPN", e);
+            }
+            if (v2rayConfig.BLOCKED_APPS != null) {
+                for (String app : v2rayConfig.BLOCKED_APPS) {
+                    try {
+                        builder.addDisallowedApplication(app);
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         }
