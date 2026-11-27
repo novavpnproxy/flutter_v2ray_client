@@ -51,6 +51,7 @@ class MethodChannelFlutterV2ray extends FlutterV2rayPlatform {
     required String notificationDisconnectButtonName,
     List<String>? blockedApps,
     List<String>? bypassSubnets,
+    List<String>? allowedApps,
     bool proxyOnly = false,
   }) async {
     await methodChannel.invokeMethod('startV2Ray', {
@@ -58,9 +59,23 @@ class MethodChannelFlutterV2ray extends FlutterV2rayPlatform {
       'config': config,
       'blocked_apps': blockedApps,
       'bypass_subnets': bypassSubnets,
+      'allowed_apps': allowedApps,
       'proxy_only': proxyOnly,
       'notificationDisconnectButtonName': notificationDisconnectButtonName,
     });
+  }
+
+  @override
+  Future<List<Map<String, String>>> getInstalledApps() async {
+    final result = await methodChannel.invokeMethod<List<dynamic>>('getInstalledApps');
+    return (result ?? const <dynamic>[])
+        .whereType<Map>()
+        .map((entry) => <String, String>{
+              'packageName': (entry['packageName'] ?? '').toString(),
+              'appName': (entry['appName'] ?? '').toString(),
+            })
+        .where((entry) => entry['packageName']!.isNotEmpty)
+        .toList();
   }
 
   @override
