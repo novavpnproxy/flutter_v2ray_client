@@ -48,8 +48,8 @@ public class V2rayController {
     }
 
     public static void StartV2ray(final Context context, final String remark, final String config,
-            final ArrayList<String> blocked_apps, final ArrayList<String> bypass_subnets) {
-        AppConfigs.V2RAY_CONFIG = Utilities.parseV2rayJsonFile(remark, config, blocked_apps, bypass_subnets);
+            final ArrayList<String> blocked_apps, final ArrayList<String> bypass_subnets, final ArrayList<String> allowed_apps) {
+        AppConfigs.V2RAY_CONFIG = Utilities.parseV2rayJsonFile(remark, config, blocked_apps, bypass_subnets, allowed_apps);
         if (AppConfigs.V2RAY_CONFIG == null) {
             return;
         }
