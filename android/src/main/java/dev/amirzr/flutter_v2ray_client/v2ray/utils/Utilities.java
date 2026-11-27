@@ -147,10 +147,11 @@ public class Utilities {
         }
     }
 
-    public static V2rayConfig parseV2rayJsonFile(final String remark, String config, final ArrayList<String> blockedApplication, final ArrayList<String> bypass_subnets) {
+    public static V2rayConfig parseV2rayJsonFile(final String remark, String config, final ArrayList<String> blockedApplication, final ArrayList<String> bypass_subnets, final ArrayList<String> allowedApplications) {
         final V2rayConfig v2rayConfig = new V2rayConfig();
         v2rayConfig.REMARK = remark;
         v2rayConfig.BLOCKED_APPS = blockedApplication;
+        v2rayConfig.ALLOWED_APPS = allowedApplications;
         v2rayConfig.BYPASS_SUBNETS = bypass_subnets;
         v2rayConfig.APPLICATION_ICON = AppConfigs.APPLICATION_ICON;
         v2rayConfig.APPLICATION_NAME = AppConfigs.APPLICATION_NAME;
