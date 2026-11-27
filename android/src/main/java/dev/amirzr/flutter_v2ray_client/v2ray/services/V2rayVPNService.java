@@ -228,14 +228,11 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
             }
         }
 
-        // Keep this process outside the VPN so outbound sockets don't loop.
-        try {
-            builder.addDisallowedApplication(getPackageName());
-        } catch (Exception e) {
-            Log.w("V2rayVPNService", "Failed to exclude self from VPN", e);
-        }
-        if (v2rayConfig.ALLOWED_APPS != null && !v2rayConfig.ALLOWED_APPS.isEmpty()) {
-            // Android allowlist mode: only explicitly selected packages use this VPN.
+        boolean hasAllowedApps = v2rayConfig.ALLOWED_APPS != null
+                && !v2rayConfig.ALLOWED_APPS.isEmpty();
+        if (hasAllowedApps) {
+            // Android does not permit mixing allowed and disallowed application lists.
+            // The NOVA app is intentionally absent from the launchable-app allowlist.
             for (String app : v2rayConfig.ALLOWED_APPS) {
                 if (app == null || app.trim().isEmpty() || app.equals(getPackageName())) {
                     continue;
@@ -246,13 +243,19 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
                     Log.w("V2rayVPNService", "Skipping unavailable allowed app: " + app, e);
                 }
             }
-        }
-
-        if (v2rayConfig.BLOCKED_APPS != null) {
-            for (String app : v2rayConfig.BLOCKED_APPS) {
-                try {
-                    builder.addDisallowedApplication(app);
-                } catch (Exception ignored) {
+        } else {
+            // Default mode: route every app except NOVA and explicitly blocked packages.
+            try {
+                builder.addDisallowedApplication(getPackageName());
+            } catch (Exception e) {
+                Log.w("V2rayVPNService", "Failed to exclude self from VPN", e);
+            }
+            if (v2rayConfig.BLOCKED_APPS != null) {
+                for (String app : v2rayConfig.BLOCKED_APPS) {
+                    try {
+                        builder.addDisallowedApplication(app);
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         }
