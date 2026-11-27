@@ -55,7 +55,8 @@ class V2ray {
   /// Starts the V2Ray service with the given configuration and settings.
   /// [remark] is a string identifier for the connection.
   /// [config] is the V2Ray configuration in JSON format.
-  /// [blockedApps] is an optional list of app package names to block.
+  /// [blockedApps] is an optional list of app package names to exclude from the VPN.
+  /// [allowedApps] is an optional allowlist; when non-empty, only these apps use the VPN.
   /// [bypassSubnets] is an optional list of subnets to bypass the VPN.
   /// [proxyOnly] is a boolean indicating whether to run in proxy-only mode.
   /// [notificationDisconnectButtonName] is the text for the disconnect button in notifications.
@@ -65,6 +66,7 @@ class V2ray {
     required String remark,
     required String config,
     List<String>? blockedApps,
+    List<String>? allowedApps,
     List<String>? bypassSubnets,
     bool proxyOnly = false,
     String notificationDisconnectButtonName = 'DISCONNECT',
@@ -81,10 +83,16 @@ class V2ray {
       remark: remark,
       config: config,
       blockedApps: blockedApps,
+      allowedApps: allowedApps,
       proxyOnly: proxyOnly,
       bypassSubnets: bypassSubnets,
       notificationDisconnectButtonName: notificationDisconnectButtonName,
     );
+  }
+
+  /// Returns launchable apps that can be selected for per-app VPN routing.
+  Future<List<Map<String, String>>> getInstalledApps() async {
+    return FlutterV2rayPlatform.instance.getInstalledApps();
   }
 
   /// Stops the V2Ray service.
